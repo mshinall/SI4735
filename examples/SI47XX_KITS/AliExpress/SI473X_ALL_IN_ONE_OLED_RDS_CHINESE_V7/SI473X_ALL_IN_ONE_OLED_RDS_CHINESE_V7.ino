@@ -1,4 +1,4 @@
-/*
+ /*
   This sketch SHOULD work with the Chinese KIT sold on AliExpress, eBay and Amazon
   The author of this sketch and Arduino Library does not know the seller of this kit and does not have a commercial relationship with any commercial product that uses the Arduino Library.
   It is important you understand that there is no guarantee that this sketch will work correctly in your current product.
@@ -114,7 +114,7 @@ const uint16_t cmd_0x15_size = sizeof cmd_0x15;         // Array of lines where 
 #define MIN_ELAPSED_TIME 100
 #define MIN_ELAPSED_RSSI_TIME 150
 
-#define DEFAULT_VOLUME 45 // change it for your favorite sound volume
+#define DEFAULT_VOLUME 10 // change it for your favorite sound volume
 
 #define FM 0
 #define LSB 1
@@ -131,7 +131,7 @@ const int eeprom_address = 0;
 long storeTime = millis();
 
 const char *bandModeDesc[] = {"FM ", "LSB", "USB", "AM "};
-uint8_t currentMode = FM;
+uint8_t currentMode = AM;
 uint8_t seekDirection = 1;
 
 bool bfoOn = false;
@@ -209,13 +209,14 @@ uint8_t agcNdx = 0;
 int8_t smIdx = 8;
 int8_t avcIdx = 38;
 
-int tabStep[] = {1,    // 0
-                 5,    // 1
-                 9,    // 2
-                 10,   // 3
-                 50,   // 4
-                 100
-                }; // 5
+int tabStep[] = {1,     // 0
+                 5,     // 1
+                 9,     // 2
+                 10,    // 3
+                 50,    // 4
+                 100,   // 5
+                 5000,  // 6
+                 6820}; // 7
 
 const int lastStep = (sizeof tabStep / sizeof(int)) - 1;
 int idxStep = 3;
@@ -231,6 +232,7 @@ typedef struct
   uint16_t currentFreq;    // Default frequency or current frequency
   uint16_t currentStepIdx; // Idex of tabStep:  Defeult frequency step (See tabStep)
   int8_t bandwidthIdx;    // Index of the table bandwidthFM, bandwidthAM or bandwidthSSB;
+  String bandInfo; //band information text
 } Band;
 
 /*
@@ -243,30 +245,37 @@ typedef struct
               Turn your receiver on with the encoder push button pressed at first time to RESET the eeprom content.
 */
 Band band[] = {
-  {FM_BAND_TYPE, 6400, 8400, 7000, 3, 0},     // FM from 64 to 84MHz; default 70MHz; default step frequency index is 3; default bandwidth index AUTO
-  {FM_BAND_TYPE, 8400, 10800, 10570, 3, 0},
-  {LW_BAND_TYPE, 100, 510, 300, 0, 4},
-  {MW_BAND_TYPE, 520, 1720, 810, 3, 4},       // AM/MW from 520 to 1720kHz; default 810kHz; default step frequency index is 3 (10kHz); default bandwidth index is 4 (3kHz)
-  {MW_BAND_TYPE, 531, 1701, 783, 2, 4},       // MW for Europe, Africa and Asia
-  {SW_BAND_TYPE, 1700, 3500, 1900, 0, 4},     // 160 meters
-  {SW_BAND_TYPE, 3500, 4500, 3700, 0, 5},     // 80 meters
-  {SW_BAND_TYPE, 4500, 5600, 4850, 1, 4},
-  {SW_BAND_TYPE, 5600, 6800, 6000, 1, 4},
-  {SW_BAND_TYPE, 6800, 7300, 7100, 0, 4},     // 40 meters
-  {SW_BAND_TYPE, 7200, 8500, 7200, 1, 4},     // 41 meters
-  {SW_BAND_TYPE, 8500, 10000, 9600, 1, 4},
-  {SW_BAND_TYPE, 10000, 11200, 10100, 0, 4},  // 30 meters
-  {SW_BAND_TYPE, 11200, 12500, 11940, 1, 4},
-  {SW_BAND_TYPE, 13400, 13900, 13600, 1, 4},
-  {SW_BAND_TYPE, 14000, 14500, 14200, 0, 4},  // 20 meters
-  {SW_BAND_TYPE, 15000, 15900, 15300, 1, 4},
-  {SW_BAND_TYPE, 17200, 17900, 17600, 1, 4},
-  {SW_BAND_TYPE, 18000, 18300, 18100, 0, 4},  // 17 meters
-  {SW_BAND_TYPE, 21000, 21400, 21200, 0, 4},  // 15 mters
-  {SW_BAND_TYPE, 21400, 21900, 21500, 1, 4},  // 13 mters
-  {SW_BAND_TYPE, 24890, 26200, 24940, 0, 4},  // 12 meters
-  {SW_BAND_TYPE, 26200, 28000, 27500, 0, 4},  // CB band (11 meters)
-  {SW_BAND_TYPE, 28000, 30000, 28400, 0, 4}   // 10 meters
+  {MW_BAND_TYPE, 520, 1720, 1340, 3, 4, "MW US"},       // AM/MW from 520 to 1720kHz; default 810kHz; default step frequency index is 3 (10kHz); default bandwidth index is 4 (3kHz)
+  {FM_BAND_TYPE, 6400, 10800, 9370, 3, 0, ""},     // FM from 64 to 84MHz; default 70MHz; default step frequency index is 3; default bandwidth index AUTO
+  {SW_BAND_TYPE, 5000, 25000, 10000, 6, 4, "WWV"},
+  {SW_BAND_TYPE, 7850, 14670, 7850, 7, 4, "CHU"},
+  {LW_BAND_TYPE, 100, 510, 300, 0, 4, "LW"},
+  {SW_BAND_TYPE, 1800, 2000, 1810, 0, 4, "160m H"},     // 160 meters ham
+  {SW_BAND_TYPE, 2300, 2495, 2300, 0, 4, "120m S"},     // 120 meters SW
+  {SW_BAND_TYPE, 3200, 3400, 3200, 0, 4, "90m S"},     // 90 meters SW
+  {SW_BAND_TYPE, 3500, 4000, 3885, 0, 4, "80m H"},     // 80 meters ham
+  {SW_BAND_TYPE, 3900, 4000, 3900, 0, 4, "75m S"},     // 75 meters SW
+  {SW_BAND_TYPE, 4750, 5060, 4750, 0, 4, "60m S"},     // 60 meters SW
+  {SW_BAND_TYPE, 5330, 5403, 5330, 0, 4, "60m H"},     // 60 meters ham
+  {SW_BAND_TYPE, 5900, 6200, 5900, 0, 4, "49m S"},     // 49 meters SW
+  {SW_BAND_TYPE, 7200, 7450, 5900, 0, 4, "41m S"},     // 41 meters SW
+  {SW_BAND_TYPE, 7000, 7300, 7290, 0, 4, "40m H"},     // 40 meters ham
+  {SW_BAND_TYPE, 9300, 9900, 9300, 0, 4, "31m S"},     // 31 meters SW
+  {SW_BAND_TYPE, 10100, 10150, 10100, 0, 4, "30m H"},  // 30 meters ham
+  {SW_BAND_TYPE, 11600, 12100, 11600, 0, 4, "25m S"},     // 25 meters SW
+  {SW_BAND_TYPE, 13570, 13870, 13570, 0, 4, "22m S"},  // 22 meters SW
+  {SW_BAND_TYPE, 14000, 14350, 14286, 0, 4, "20m H"},  // 20 meters ham
+  {SW_BAND_TYPE, 15100, 15800, 15100, 0, 4, "19m S"},  //19 meters SW
+  {SW_BAND_TYPE, 17480, 17900, 17480, 0, 4, "16m S"},  //16 meters SW
+  {SW_BAND_TYPE, 18068, 18168, 18100, 0, 4, "17m H"},  // 17 meters ham  
+  {SW_BAND_TYPE, 18900, 19020, 18900, 0, 4, "15m S"},  //15 meters SW
+  {SW_BAND_TYPE, 21000, 21450, 21000, 0, 4, "15m H"},  // 15 meters ham
+  {SW_BAND_TYPE, 21450, 21850, 21450, 0, 4, "13m S"},  // 13 meters SW
+  {SW_BAND_TYPE, 24890, 24990, 24890, 0, 4, "12m H"},  // 12 meters ham
+  {SW_BAND_TYPE, 25600, 26100, 25670, 0, 4, "11m S"},  //11 meters SW
+  {SW_BAND_TYPE, 26965, 27405, 27185, 3, 4, "11m C"},  // 11 meters CB
+  {SW_BAND_TYPE, 25000, 28000, 10100, 0, 4, "free C"},  //freeband CB
+  {SW_BAND_TYPE, 28000, 29700, 29000, 0, 4, "10m H"}   // 10 meters ham
 };
 
 const int lastBand = (sizeof band / sizeof(Band)) - 1;
@@ -501,7 +510,7 @@ void showFrequency()
 
   if (band[bandIdx].bandType == FM_BAND_TYPE)
   {
-    convertToChar(currentFrequency, freqDisplay, 5, 3, ',');
+    convertToChar(currentFrequency, freqDisplay, 5, 3, '.');
     unit = (char *)"MHz";
   }
   else
@@ -576,6 +585,16 @@ void showBandDesc()
   oled.invertOutput(cmdBand);
   oled.print(bandMode);
   oled.invertOutput(false);
+  //band info
+  if(currentMode != FM) {
+    oled.setCursor(40, 2);
+    oled.print("          ");
+    oled.setCursor(40, 2);
+    oled.print(band[bandIdx].bandInfo);
+  } else {
+    oled.setCursor(40, 2);
+    oled.print("          ");
+  }
 }
 
 /* *******************************
