@@ -90,6 +90,9 @@ const uint16_t cmd_0x15_size = sizeof cmd_0x15;         // Array of lines where 
 #define MW_BAND_TYPE 1
 #define SW_BAND_TYPE 2
 #define LW_BAND_TYPE 3
+#define HM_BAND_TYPE 4
+#define TM_BAND_TYPE 5
+#define CB_BAND_TYPE 5
 
 // OLED Diaplay constants
 #define RST_PIN -1 // Define proper RST_PIN if required.
@@ -235,6 +238,12 @@ typedef struct
   String bandInfo; //band information text
 } Band;
 
+typedef struct
+{
+  uint8_t bandType;        // Band type (FM, MW or SW)
+  Band band[];
+} Service;
+
 /*
    Band table
    YOU CAN CONFIGURE YOUR OWN BAND PLAN. Be guided by the comments.
@@ -244,39 +253,57 @@ typedef struct
    ATTENTION: You have to RESET the eeprom after adding or removing a line of this table.
               Turn your receiver on with the encoder push button pressed at first time to RESET the eeprom content.
 */
-Band band[] = {
-  {MW_BAND_TYPE, 520, 1720, 1340, 3, 4, "MW US"},       // AM/MW from 520 to 1720kHz; default 810kHz; default step frequency index is 3 (10kHz); default bandwidth index is 4 (3kHz)
-  {FM_BAND_TYPE, 6400, 10800, 9370, 3, 0, ""},     // FM from 64 to 84MHz; default 70MHz; default step frequency index is 3; default bandwidth index AUTO
-  {SW_BAND_TYPE, 5000, 25000, 10000, 6, 4, "WWV"},
-  {SW_BAND_TYPE, 7850, 14670, 7850, 7, 4, "CHU"},
-  {LW_BAND_TYPE, 100, 510, 300, 0, 4, "LW"},
-  {SW_BAND_TYPE, 1800, 2000, 1810, 0, 4, "160m H"},     // 160 meters ham
-  {SW_BAND_TYPE, 2300, 2495, 2300, 0, 4, "120m S"},     // 120 meters SW
-  {SW_BAND_TYPE, 3200, 3400, 3200, 0, 4, "90m S"},     // 90 meters SW
-  {SW_BAND_TYPE, 3500, 4000, 3885, 0, 4, "80m H"},     // 80 meters ham
-  {SW_BAND_TYPE, 3900, 4000, 3900, 0, 4, "75m S"},     // 75 meters SW
-  {SW_BAND_TYPE, 4750, 5060, 4750, 0, 4, "60m S"},     // 60 meters SW
-  {SW_BAND_TYPE, 5330, 5403, 5330, 0, 4, "60m H"},     // 60 meters ham
-  {SW_BAND_TYPE, 5900, 6200, 5900, 0, 4, "49m S"},     // 49 meters SW
-  {SW_BAND_TYPE, 7200, 7450, 5900, 0, 4, "41m S"},     // 41 meters SW
-  {SW_BAND_TYPE, 7000, 7300, 7290, 0, 4, "40m H"},     // 40 meters ham
-  {SW_BAND_TYPE, 9300, 9900, 9300, 0, 4, "31m S"},     // 31 meters SW
-  {SW_BAND_TYPE, 10100, 10150, 10100, 0, 4, "30m H"},  // 30 meters ham
-  {SW_BAND_TYPE, 11600, 12100, 11600, 0, 4, "25m S"},     // 25 meters SW
-  {SW_BAND_TYPE, 13570, 13870, 13570, 0, 4, "22m S"},  // 22 meters SW
-  {SW_BAND_TYPE, 14000, 14350, 14286, 0, 4, "20m H"},  // 20 meters ham
-  {SW_BAND_TYPE, 15100, 15800, 15100, 0, 4, "19m S"},  //19 meters SW
-  {SW_BAND_TYPE, 17480, 17900, 17480, 0, 4, "16m S"},  //16 meters SW
-  {SW_BAND_TYPE, 18068, 18168, 18100, 0, 4, "17m H"},  // 17 meters ham  
-  {SW_BAND_TYPE, 18900, 19020, 18900, 0, 4, "15m S"},  //15 meters SW
-  {SW_BAND_TYPE, 21000, 21450, 21000, 0, 4, "15m H"},  // 15 meters ham
-  {SW_BAND_TYPE, 21450, 21850, 21450, 0, 4, "13m S"},  // 13 meters SW
-  {SW_BAND_TYPE, 24890, 24990, 24890, 0, 4, "12m H"},  // 12 meters ham
-  {SW_BAND_TYPE, 25600, 26100, 25670, 0, 4, "11m S"},  //11 meters SW
-  {SW_BAND_TYPE, 26965, 27405, 27185, 3, 4, "11m C"},  // 11 meters CB
-  {SW_BAND_TYPE, 25000, 28000, 10100, 0, 4, "free C"},  //freeband CB
-  {SW_BAND_TYPE, 28000, 29700, 29000, 0, 4, "10m H"}   // 10 meters ham
-};
+
+Service service[] = {
+  {
+    FM_BAND_TYPE, {
+      {6400, 10800, 9370, 3, 0, ""}    // FM from 64 to 84MHz; default 70MHz; default step frequency index is 3; default bandwidth index AUTO
+    },
+    LW_BAND_TYPE, {
+      {100, 510, 300, 0, 4, "LW"}
+    },
+    MW_BAND_TYPE, {
+      {520, 1720, 1340, 3, 4, "MW"}       // AM/MW from 520 to 1720kHz; default 810kHz; default step frequency index is 3 (10kHz); default bandwidth index is 4 (3kHz)
+    },
+    TM_BAND_TYPE, {
+      {5000, 25000, 10000, 6, 4, "WWV"},
+      {7850, 14670, 7850, 7, 4, "CHU"}
+    },
+    SW_BAND_TYPE, {
+      {2300, 2495, 2300, 0, 4, "120m"},     // 120 meters SW,
+      {3200, 3400, 3200, 0, 4, "90m"},     // 90 meters SW,
+      {3900, 4000, 3900, 0, 4, "75m"},     // 75 meters SW
+      {4750, 5060, 4750, 0, 4, "60m"},     // 60 meters SW
+      {5900, 6200, 5900, 0, 4, "49m"},     // 49 meters SW
+      {7200, 7450, 5900, 0, 4, "41m"},     // 41 meters SW
+      {9300, 9900, 9300, 0, 4, "31m"},     // 31 meters SW
+      {11600, 12100, 11600, 0, 4, "25m"},     // 25 meters SW
+      {13570, 13870, 13570, 0, 4, "22m"},  // 22 meters SW
+      {15100, 15800, 15100, 0, 4, "19m"},  //19 meters SW
+      {17480, 17900, 17480, 0, 4, "16m"},  //16 meters SW
+      {18900, 19020, 18900, 0, 4, "15m"},  //15 meters SW
+      {21450, 21850, 21450, 0, 4, "13m"},  // 13 meters SW
+      {25600, 26100, 25670, 0, 4, "11m"}  //11 meters SW
+    },
+    CB_BAND_TYPE, {
+      {26965, 27405, 27185, 3, 4, "CB"},  // 11 meters CB
+      {25000, 28000, 10100, 0, 4, "fb CB"}  //freeband CB
+    },
+    HM_BAND_TYPE, {
+      {1800, 2000, 1810, 0, 4, "160m H"},     // 160 meters ham
+      {3500, 4000, 3885, 0, 4, "80m H"},     // 80 meters ham
+      {5330, 5403, 5330, 0, 4, "60m H"},     // 60 meters ham
+      {7000, 7300, 7290, 0, 4, "40m H"},     // 40 meters ham
+      {10100, 10150, 10100, 0, 4, "30m H"},  // 30 meters ham
+      {14000, 14350, 14286, 0, 4, "20m H"},  // 20 meters ham
+      {18068, 18168, 18100, 0, 4, "17m H"},  // 17 meters ham  
+      {21000, 21450, 21000, 0, 4, "15m H"},  // 15 meters ham
+      {24890, 24990, 24890, 0, 4, "12m H"},  // 12 meters ham
+      {28000, 29700, 29000, 0, 4, "10m H"}   // 10 meters ham
+    }
+    
+  }
+}
 
 const int lastBand = (sizeof band / sizeof(Band)) - 1;
 int bandIdx = 1;
