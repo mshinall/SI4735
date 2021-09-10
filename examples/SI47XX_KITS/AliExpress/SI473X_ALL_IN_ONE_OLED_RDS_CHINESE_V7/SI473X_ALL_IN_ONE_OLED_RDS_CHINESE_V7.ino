@@ -229,7 +229,7 @@ int idxStep = 3;
 */
 typedef struct
 {
-  uint8_t bandType;        // Band type (FM, MW or SW)
+  // uint8_t bandType;        // Band type (FM, MW or SW)
   uint16_t minimumFreq;    // Minimum frequency of the band
   uint16_t maximumFreq;    // Maximum frequency of the band
   uint16_t currentFreq;    // Default frequency or current frequency
@@ -254,7 +254,7 @@ typedef struct
               Turn your receiver on with the encoder push button pressed at first time to RESET the eeprom content.
 */
 
-Service service[] = {
+Service services[] = {
   {
     FM_BAND_TYPE, {
       {6400, 10800, 9370, 3, 0, ""}    // FM from 64 to 84MHz; default 70MHz; default step frequency index is 3; default bandwidth index AUTO
